@@ -134,7 +134,7 @@ public class PlayerQuestGui extends LightweightGuiDescription {
                     } else {
                         int itemCount = 0;
                         for (int k = 0; k < client.player.getInventory().size(); k++) {
-                            if (client.player.getInventory().getStack(k).isItemEqualIgnoreDamage(quest.getTaskStack(u)))
+                            if (client.player.getInventory().getStack(k).isItemEqual(quest.getTaskStack(u)))
                                 itemCount += client.player.getInventory().getStack(k).getCount();
                         }
                         String string = quest.getStringTasks()[u] + " - " + Text.translatable("text.villagerquests.collected").getString() + itemCount + " / " + quest.getTaskCount(u);

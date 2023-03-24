@@ -3,6 +3,7 @@ package net.villagerquests.gui;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -11,6 +12,8 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -61,14 +64,14 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
                 else
                     this.acceptQuest();
             }
-        }));
+        }, Supplier::get));
         this.acceptButton.setMessage(Text.translatable("text.villagerquests.acceptButton"));
 
-        this.declineButton = (QuestScreen.DeclineButton) this.addDrawableChild(new QuestScreen.DeclineButton(i + 247, j + 140, (button) -> {
-            if (button instanceof QuestScreen.DeclineButton) {
+        this.declineButton = (QuestScreen.DeclineButton) this.addDrawableChild(new DeclineButton(i + 247, j + 140, (button) -> {
+            if (button instanceof DeclineButton) {
                 this.declineQuest();
             }
-        }));
+        }, Supplier::get));
 
         for (int l = 0; l < 7; ++l) {
             this.quests[l] = (QuestScreen.WidgetButtonPage) this
@@ -100,7 +103,7 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
 
                             }
                         }
-                    }));
+                    }, Supplier::get));
             if (this.handler.questIdList.size() > l)
                 if (((PlayerAccessor) this.playerEntity).getPlayerFinishedQuestIdList().contains(this.handler.questIdList.get(l)) && !((PlayerAccessor) this.playerEntity)
                         .getPlayerQuestRefreshTimerList().get(((PlayerAccessor) this.playerEntity).getPlayerFinishedQuestIdList().indexOf(this.handler.questIdList.get(l))).equals(-1))
@@ -145,9 +148,17 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
     }
 
     @Override
+    protected void handledScreenTick() {
+        super.handledScreenTick();
+        for (WidgetButtonPage quest : this.quests) {
+            quest.updateTooltip();
+        }
+    }
+
+    @Override
     protected void drawBackground(MatrixStack matrices, float delta, int mouseX, int mouseY) {
         super.drawBackground(matrices, delta, mouseX, mouseY);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, QuestScreenHandler.GUI_ICONS);
         int i = (this.width - this.backgroundWidth) / 2 + 4;
@@ -276,7 +287,7 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
             int j = (this.height - this.backgroundHeight) / 2;
             int k = j + 17;
             int l = i + 10;
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShader(GameRenderer::getPositionTexProgram);
             RenderSystem.setShaderTexture(0, QuestScreenHandler.GUI_ICONS);
             this.renderScrollbar(matrices, i, j, questIds);
             if (this.selectedQuest != null)
@@ -412,8 +423,8 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
         final int index;
         final int questId;
 
-        public WidgetButtonPage(int x, int y, int index, int questId, ButtonWidget.PressAction onPress) {
-            super(x, y, 89, 20, ScreenTexts.EMPTY, onPress);
+        public WidgetButtonPage(int x, int y, int index, int questId, ButtonWidget.PressAction onPress, NarrationSupplier narrationSupplier) {
+            super(x, y, 89, 20, ScreenTexts.EMPTY, onPress, narrationSupplier);
             this.index = index;
             this.questId = questId;
             this.visible = false;
@@ -423,9 +434,7 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
             return this.index;
         }
 
-        @Override
-        public void renderTooltip(MatrixStack matrices, int mouseX, int mouseY) {
-            super.renderTooltip(matrices, mouseX, mouseY);
+        public void updateTooltip() {
             if (((PlayerAccessor) playerEntity).getPlayerFinishedQuestIdList().contains(questId)) {
                 int refreshTicks = ((PlayerAccessor) playerEntity).getPlayerQuestRefreshTimerList().get(((PlayerAccessor) playerEntity).getPlayerFinishedQuestIdList().indexOf(questId));
                 if (refreshTicks != -1) {
@@ -435,17 +444,18 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
                         string = String.format("%02d:%02d:%02d", refreshTicks / 3600, (refreshTicks % 3600) / 60, (refreshTicks % 60));
                     else
                         string = String.format("%02d:%02d", (refreshTicks % 3600) / 60, (refreshTicks % 60));
-                    client.currentScreen.renderTooltip(matrices, Text.translatable("text.villagerquests.refreshing", string), mouseX, mouseY);
+                    this.setTooltip(Tooltip.of(Text.translatable("text.villagerquests.refreshing", string)));
                 }
+            } else {
+                this.setTooltip(null);
             }
         }
-
     }
 
     private class AcceptButton extends ButtonWidget {
 
-        public AcceptButton(int x, int y, ButtonWidget.PressAction onPress) {
-            super(x, y, 55, 17, ScreenTexts.EMPTY, onPress);
+        public AcceptButton(int x, int y, ButtonWidget.PressAction onPress, NarrationSupplier narrationSupplier) {
+            super(x, y, 55, 17, ScreenTexts.EMPTY, onPress, narrationSupplier);
             this.visible = false;
         }
 
@@ -453,45 +463,38 @@ public class QuestScreen extends CottonInventoryScreen<QuestScreenHandler> {
         public void renderButton(MatrixStack matrices, int mouseX, int mouseY, float delta) {
             MinecraftClient minecraftClient = MinecraftClient.getInstance();
             TextRenderer textRenderer = minecraftClient.textRenderer;
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShader(GameRenderer::getPositionTexProgram);
             RenderSystem.setShaderTexture(0, QuestScreenHandler.GUI_ICONS);
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
             int i = this.getYImage(this.isHovered());
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.enableDepthTest();
-            WidgetButtonPage.drawTexture(matrices, this.x, this.y, 0, 176 + i * 17, 55, this.height, 512, 512);
+            WidgetButtonPage.drawTexture(matrices, this.getX(), this.getY(), 0, 176 + i * 17, 55, this.height, 512, 512);
             int j = this.active ? 16777215 : 10526880;
-            drawCenteredText(matrices, textRenderer, this.getMessage(), this.x + this.width / 2, this.y + (this.height - 6) / 2, j | MathHelper.ceil(this.alpha * 255.0F) << 24);
+            drawCenteredText(matrices, textRenderer, this.getMessage(), this.getX() + this.width / 2, this.getY() + (this.height - 6) / 2, j | MathHelper.ceil(this.alpha * 255.0F) << 24);
         }
 
     }
 
-    private class DeclineButton extends ButtonWidget {
+    private static class DeclineButton extends ButtonWidget {
 
-        public DeclineButton(int x, int y, ButtonWidget.PressAction onPress) {
-            super(x, y, 16, 15, ScreenTexts.EMPTY, onPress);
+        public DeclineButton(int x, int y, ButtonWidget.PressAction onPress, NarrationSupplier narrationSupplier) {
+            super(x, y, 16, 15, ScreenTexts.EMPTY, onPress, narrationSupplier);
             this.visible = false;
+            this.setTooltip(Tooltip.of(Text.translatable("text.villagerquests.decline")));
         }
 
-        @Override
-        public void renderTooltip(MatrixStack matrices, int mouseX, int mouseY) {
-            super.renderTooltip(matrices, mouseX, mouseY);
-            client.currentScreen.renderTooltip(matrices, Text.translatable("text.villagerquests.decline"), mouseX, mouseY);
-        }
 
         @Override
         public void renderButton(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShader(GameRenderer::getPositionTexProgram);
             RenderSystem.setShaderTexture(0, QuestScreenHandler.GUI_ICONS);
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
             RenderSystem.enableDepthTest();
-            WidgetButtonPage.drawTexture(matrices, this.x, this.y, 64, 176 + (this.isHovered() ? 15 : 0), this.width, this.height, 512, 512);
-            if (this.isHovered()) {
-                this.renderTooltip(matrices, mouseX, mouseY);
-            }
+            DrawableHelper.drawTexture(matrices, this.getX(), this.getY(), 64, 176 + (this.isHovered() ? 15 : 0), this.width, this.height, 512, 512);
         }
     }
 }

@@ -2,6 +2,9 @@ package net.villagerquests.mixin.client;
 
 import java.util.List;
 
+import net.minecraft.util.math.RotationAxis;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -25,8 +28,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Matrix4f;
-import net.minecraft.util.math.Vec3f;
 import net.villagerquests.VillagerQuestsClient;
 import net.villagerquests.VillagerQuestsMain;
 import net.villagerquests.accessor.MerchantAccessor;
@@ -67,7 +68,7 @@ public abstract class WanderingTraderEntityRendererMixin extends MobEntityRender
                 if (this.hasLabel(mobEntity))
                     matrixStack.translate(0.0D, 0.3D, 0.0D);
                 // method 35828 is the last Vec3f method in the Quaternion class
-                matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(this.dispatcher.getRotation().toEulerXyzDegrees().getY()));
+                matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(this.dispatcher.getRotation().getEulerAnglesXYZ(new Vector3f()).y()));
 
                 if (VillagerQuestsMain.CONFIG.flatQuestIcon)
                     matrixStack.scale(-0.1F, -0.1F, 0.1F);

@@ -9,14 +9,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.BuiltinRegistries;
-import net.minecraft.util.registry.Registry;
 import net.villagerquests.VillagerQuestsMain;
 
 public class QuestLoader implements SimpleSynchronousResourceReloadListener {
+    public static DynamicRegistryManager dynamicRegistries;
 
     @Override
     public Identifier getFabricId() {
@@ -46,7 +49,7 @@ public class QuestLoader implements SimpleSynchronousResourceReloadListener {
                     // Type
                     QuestData.typeList.add(data.get("type").getAsString());
                     // Profession
-                    if (!Registry.VILLAGER_PROFESSION.containsId(new Identifier(data.get("profession").getAsString())))
+                    if (!Registries.VILLAGER_PROFESSION.containsId(new Identifier(data.get("profession").getAsString())))
                         VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. Profession {} does not exist", data.get("id").getAsInt(), data.get("profession").getAsString());
                     QuestData.professionList.add(data.get("profession").getAsString());
                     // Task
@@ -59,20 +62,24 @@ public class QuestLoader implements SimpleSynchronousResourceReloadListener {
                             if (i == 0)
                                 continue;
                             String lastTaskString = data.getAsJsonArray("task").get(i - 1).getAsString();
-                            if (lastTaskString.equals("kill")) {
-                                if (!Registry.ENTITY_TYPE.containsId(new Identifier((String) taskList.get(taskList.size() - 1))))
-                                    VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. EntityType {} is null", data.get("id").getAsInt(),
-                                            data.getAsJsonArray("task").get(i).getAsString());
-                            } else if (lastTaskString.equals("travel") || lastTaskString.equals("explore")) {
-                                if (!BuiltinRegistries.DYNAMIC_REGISTRY_MANAGER.get(Registry.STRUCTURE_KEY).containsId(new Identifier((String) taskList.get(taskList.size() - 1)))
-                                        && !BuiltinRegistries.DYNAMIC_REGISTRY_MANAGER.get(Registry.BIOME_KEY).containsId(new Identifier((String) taskList.get(taskList.size() - 1)))
-                                        && VillagerQuestsMain.CONFIG.structureRegistryCheck)
-                                    VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. Structure or Biome {} is null", data.get("id").getAsInt(),
-                                            data.getAsJsonArray("task").get(i).getAsString());
-                            } else if (lastTaskString.equals("submit") || lastTaskString.equals("farm") || lastTaskString.equals("mine")) {
-                                if (!Registry.ITEM.containsId(new Identifier((String) taskList.get(taskList.size() - 1))))
-                                    VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. Item {} is null", data.get("id").getAsInt(),
-                                            data.getAsJsonArray("task").get(i).getAsString());
+                            switch (lastTaskString) {
+                                case "kill" -> {
+                                    if (!Registries.ENTITY_TYPE.containsId(new Identifier((String) taskList.get(taskList.size() - 1))))
+                                        VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. EntityType {} is null", data.get("id").getAsInt(),
+                                                data.getAsJsonArray("task").get(i).getAsString());
+                                }
+                                case "travel", "explore" -> {
+                                    if (dynamicRegistries == null || (!dynamicRegistries.get(RegistryKeys.STRUCTURE).containsId(new Identifier((String) taskList.get(taskList.size() - 1)))
+                                            && !dynamicRegistries.get(RegistryKeys.BIOME).containsId(new Identifier((String) taskList.get(taskList.size() - 1)))
+                                            && VillagerQuestsMain.CONFIG.structureRegistryCheck))
+                                        VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. Structure or Biome {} is null", data.get("id").getAsInt(),
+                                                data.getAsJsonArray("task").get(i).getAsString());
+                                }
+                                case "submit", "farm", "mine" -> {
+                                    if (!Registries.ITEM.containsId(new Identifier((String) taskList.get(taskList.size() - 1))))
+                                        VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. Item {} is null", data.get("id").getAsInt(),
+                                                data.getAsJsonArray("task").get(i).getAsString());
+                                }
                             }
                         }
                     }
@@ -91,7 +98,7 @@ public class QuestLoader implements SimpleSynchronousResourceReloadListener {
                             rewardList.add(data.getAsJsonArray("reward").get(i).getAsInt());
                         } else {
                             rewardList.add(data.getAsJsonArray("reward").get(i).getAsString());
-                            if (!Registry.ITEM.containsId(new Identifier((String) rewardList.get(rewardList.size() - 1))))
+                            if (!Registries.ITEM.containsId(new Identifier((String) rewardList.get(rewardList.size() - 1))))
                                 VillagerQuestsMain.LOGGER.error("Error occurred while loading quest {}. Reward Item {} is null", data.get("id").getAsInt(),
                                         data.getAsJsonArray("reward").get(i).getAsString());
                         }

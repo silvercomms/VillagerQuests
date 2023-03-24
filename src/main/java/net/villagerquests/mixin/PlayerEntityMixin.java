@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import net.minecraft.registry.Registries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -19,7 +20,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.registry.Registry;
 import net.villagerquests.accessor.MerchantAccessor;
 import net.villagerquests.accessor.PlayerAccessor;
 import net.villagerquests.data.Quest;
@@ -126,7 +126,7 @@ public abstract class PlayerEntityMixin implements MerchantAccessor, PlayerAcces
     @Inject(method = "onKilledOther", at = @At(value = "TAIL"))
     private void onKilledOtherMixin(ServerWorld world, LivingEntity other, CallbackInfoReturnable<Boolean> info) {
         // Instead of sending multiple packets, send one with all information
-        int entityRawId = Registry.ENTITY_TYPE.getRawId(other.getType());
+        int entityRawId = Registries.ENTITY_TYPE.getRawId(other.getType());
         if (this.canAddKilledMobQuestCount(entityRawId))
             QuestServerPacket.writeS2CQuestKillAdditionPacket((ServerPlayerEntity) (Object) this, entityRawId);
     }

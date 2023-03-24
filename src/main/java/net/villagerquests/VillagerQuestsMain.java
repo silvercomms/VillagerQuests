@@ -1,5 +1,7 @@
 package net.villagerquests;
 
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,7 +14,6 @@ import net.minecraft.resource.ResourceType;
 import net.minecraft.screen.MerchantScreenHandler;
 import net.minecraft.screen.ScreenHandlerContext;
 import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.util.registry.Registry;
 import net.villagerquests.command.QuestCommands;
 import net.villagerquests.config.VillagerQuestsConfig;
 import net.villagerquests.data.QuestLoader;
@@ -27,11 +28,14 @@ public class VillagerQuestsMain implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        QUEST_SCREEN_HANDLER_TYPE = Registry.register(Registry.SCREEN_HANDLER, "villagerquests",
+        QUEST_SCREEN_HANDLER_TYPE = Registry.register(Registries.SCREEN_HANDLER, "villagerquests",
                 new ScreenHandlerType<>((syncId, inventory) -> new QuestScreenHandler(syncId, inventory, ScreenHandlerContext.EMPTY, new MerchantScreenHandler(syncId, inventory))));
         AutoConfig.register(VillagerQuestsConfig.class, JanksonConfigSerializer::new);
         CONFIG = AutoConfig.getConfigHolder(VillagerQuestsConfig.class).getConfig();
         ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(new QuestLoader());
+        ServerLifecycleEvents.SERVER_STARTING.register(server ->
+                QuestLoader.dynamicRegistries = server.getRegistryManager()
+         );
         QuestServerPacket.init();
         QuestCommands.init();
         ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, serverResourceManager, success) -> {

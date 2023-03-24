@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import net.minecraft.registry.Registries;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 
@@ -15,7 +16,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 import net.villagerquests.VillagerQuestsMain;
 import net.villagerquests.accessor.PlayerAccessor;
 import net.villagerquests.network.QuestServerPacket;
@@ -146,7 +146,7 @@ public class Quest {
         if (taskString.equals("kill") || taskString.equals("explore") || taskString.equals("travel"))
             return ItemStack.EMPTY;
         else
-            return new ItemStack(Registry.ITEM.get(new Identifier(itemString)));
+            return new ItemStack(Registries.ITEM.get(new Identifier(itemString)));
     }
 
     public ItemStack getRewardStack(int index) {
@@ -154,24 +154,24 @@ public class Quest {
         if (index == 0 && rewardsExperience)
             return new ItemStack(Items.EXPERIENCE_BOTTLE);
         String string = (String) this.rewardList.get(rewardsExperience ? (index - 1) * 2 : index * 2);
-        return new ItemStack(Registry.ITEM.get(new Identifier(string)));
+        return new ItemStack(Registries.ITEM.get(new Identifier(string)));
     }
 
     // Structure and biome check:
     // DynamicRegistryManager.BUILTIN only contains hardcoded registries but would work for vanilla stuff
-    // Example: DynamicRegistryManager.BUILTIN.get().get(Registry.STRUCTURE_KEY).containsId(identifier)
+    // Example: DynamicRegistryManager.BUILTIN.get().get(Registries.STRUCTURE_KEY).containsId(identifier)
     // You have to get DynamicRegistryManager from MinecraftServer to get all existing structures
     private String getTranslatedRegistryName(String task, String identifierString) {
         Identifier identifier = new Identifier(identifierString);
         switch (task) {
         case "kill":
-            return Registry.ENTITY_TYPE.get(identifier).getName().getString();
+            return Registries.ENTITY_TYPE.get(identifier).getName().getString();
         case "farm":
-            return Registry.ITEM.get(identifier).getName().getString();
+            return Registries.ITEM.get(identifier).getName().getString();
         case "submit":
-            return Registry.ITEM.get(identifier).getName().getString();
+            return Registries.ITEM.get(identifier).getName().getString();
         case "mine":
-            return Registry.BLOCK.get(identifier).getName().getString();
+            return Registries.BLOCK.get(identifier).getName().getString();
         case "explore":
             return WordUtils.capitalize(identifier.toString().replace("_", " ").replace(":", " "));
         case "travel":
@@ -184,7 +184,7 @@ public class Quest {
     public void getRewards(PlayerEntity playerEntity) {
         playerEntity.addExperience(getExperienceAmount());
         for (int i = 0; i < this.rewardList.size() / 2; i++) {
-            ItemStack stack = new ItemStack(Registry.ITEM.get(new Identifier((String) this.rewardList.get(i * 2))), (int) this.rewardList.get(i * 2 + 1));
+            ItemStack stack = new ItemStack(Registries.ITEM.get(new Identifier((String) this.rewardList.get(i * 2))), (int) this.rewardList.get(i * 2 + 1));
             playerEntity.getInventory().offerOrDrop(stack);
         }
     }
@@ -195,7 +195,7 @@ public class Quest {
 
                 int deleteAmount = (int) this.taskList.get(i * 3 + 2);
                 for (int u = 0; u < playerEntity.getInventory().size(); u++) {
-                    if (playerEntity.getInventory().getStack(u).isItemEqualIgnoreDamage(new ItemStack(Registry.ITEM.get(new Identifier((String) this.taskList.get(i * 3 + 1)))))) {
+                    if (playerEntity.getInventory().getStack(u).isItemEqual(new ItemStack(Registries.ITEM.get(new Identifier((String) this.taskList.get(i * 3 + 1)))))) {
                         if (deleteAmount < playerEntity.getInventory().getStack(u).getCount()) {
                             playerEntity.getInventory().getStack(u).decrement(deleteAmount);
                         } else {
@@ -219,7 +219,7 @@ public class Quest {
                 if (countList.isEmpty())
                     continue;
                 for (int u = 0; u < countList.get(index).size() / 2; u++)
-                    if (Registry.ENTITY_TYPE.getRawId(Registry.ENTITY_TYPE.get(new Identifier((String) this.taskList.get(i * 3 + 1)))) == (int) countList.get(index).get(u * 2))
+                    if (Registries.ENTITY_TYPE.getRawId(Registries.ENTITY_TYPE.get(new Identifier((String) this.taskList.get(i * 3 + 1)))) == (int) countList.get(index).get(u * 2))
                         if (countList.get(index).get(u * 2 + 1) < (int) this.taskList.get(i * 3 + 2))
                             return false;
             } else if (this.taskList.get(i * 3).equals("travel") || this.taskList.get(i * 3).equals("explore")) {
@@ -232,7 +232,7 @@ public class Quest {
             } else {
                 int itemCount = 0;
                 for (int k = 0; k < playerEntity.getInventory().size(); k++)
-                    if (playerEntity.getInventory().getStack(k).isItemEqualIgnoreDamage(new ItemStack(Registry.ITEM.get(new Identifier((String) this.taskList.get(i * 3 + 1))))))
+                    if (playerEntity.getInventory().getStack(k).isItemEqual(new ItemStack(Registries.ITEM.get(new Identifier((String) this.taskList.get(i * 3 + 1))))))
                         itemCount += playerEntity.getInventory().getStack(k).getCount();
                 if (itemCount == 0 || itemCount < (int) this.taskList.get(i * 3 + 2))
                     return false;
@@ -245,7 +245,7 @@ public class Quest {
         List<Integer> list = new ArrayList<Integer>();
         for (int i = 0; i < this.taskList.size() / 3; i++) {
             if (this.taskList.get(i * 3).equals("kill")) {
-                list.add(Registry.ENTITY_TYPE.getRawId(Registry.ENTITY_TYPE.get(new Identifier((String) this.taskList.get(i * 3 + 1)))));
+                list.add(Registries.ENTITY_TYPE.getRawId(Registries.ENTITY_TYPE.get(new Identifier((String) this.taskList.get(i * 3 + 1)))));
                 list.add(0);
             }
         }
