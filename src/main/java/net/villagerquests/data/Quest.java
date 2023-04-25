@@ -173,9 +173,9 @@ public class Quest {
         case "mine":
             return Registry.BLOCK.get(identifier).getName().getString();
         case "explore":
-            return WordUtils.capitalize(identifier.toString().replace("_", " ").replace(":", " "));
+            return WordUtils.capitalize(identifier.toUnderscoreSeparatedString().replace("minecraft_", "").replace("_", " "));
         case "travel":
-            return WordUtils.capitalize(identifier.toString().replace("_", " ").replace(":", " "));
+            return WordUtils.capitalize(identifier.toUnderscoreSeparatedString().replace("minecraft_","").replace("_", " "));
         default:
             return "";
         }
