@@ -165,7 +165,7 @@ public class Quest {
         Identifier identifier = new Identifier(identifierString);
         switch (task) {
         case "kill":
-            return Registry.ENTITY_TYPE.get(identifier).getName().getString();
+            return Registries.ENTITY_TYPE.get(identifier).getName().getString();
         case "farm":
             return Registry.ITEM.get(identifier).getName().getString();
         case "submit":
@@ -184,7 +184,8 @@ public class Quest {
     public void getRewards(PlayerEntity playerEntity) {
         playerEntity.addExperience(getExperienceAmount());
         for (int i = 0; i < this.rewardList.size() / 2; i++) {
-            ItemStack stack = new ItemStack(Registry.ITEM.get(new Identifier((String) this.rewardList.get(i * 2))), (int) this.rewardList.get(i * 2 + 1));
+            int finalI = i;
+            ItemStack stack = Util.make(Registry.ITEM.get(new Identifier((String) this.rewardList.get(i * 2))).getDefaultStack(), s -> s.setCount((int) this.rewardList.get(finalI * 2 + 1)));
             playerEntity.getInventory().offerOrDrop(stack);
         }
     }
