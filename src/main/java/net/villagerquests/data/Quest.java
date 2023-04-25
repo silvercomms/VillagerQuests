@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import net.minecraft.util.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 
@@ -165,7 +166,7 @@ public class Quest {
         Identifier identifier = new Identifier(identifierString);
         switch (task) {
         case "kill":
-            return Registries.ENTITY_TYPE.get(identifier).getName().getString();
+            return Registry.ENTITY_TYPE.get(identifier).getName().getString();
         case "farm":
             return Registry.ITEM.get(identifier).getName().getString();
         case "submit":
